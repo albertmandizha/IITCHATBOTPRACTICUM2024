@@ -34,7 +34,7 @@ def send_message():
     
     # Close cursor
     cursor.close()
-    time.sleep(2)
+    time.sleep(1)
     return jsonify({'message': response})
 
 if __name__ == '__main__':
