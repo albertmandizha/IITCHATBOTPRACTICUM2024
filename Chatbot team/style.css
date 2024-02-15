@@ -169,6 +169,27 @@ header h2 {
 .chat-input textarea:valid ~ span {
   visibility: visible;
 }
+.button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.action-button {
+  padding: 8px 16px;
+  margin: 0 5px;
+  background-color: #ff0000;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #d50000;
+}
+
 
 @media (max-width: 490px) {
   .chatbot-toggler {
@@ -193,3 +214,4 @@ header h2 {
     display: block;
   }
 }
+
