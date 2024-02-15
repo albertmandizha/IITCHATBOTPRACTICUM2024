@@ -5,7 +5,6 @@ const chatInput = document.querySelector(".chat-input textarea");
 const sendChatBtn = document.querySelector(".chat-input span");
 
 let userMessage = null;//varaible to store msg by user
-const API_KEY = ""; // Paste your API key here
 const inputInitHeight = chatInput.scrollHeight;
 
 const createChatLi = (message, className) => {
@@ -19,11 +18,8 @@ const createChatLi = (message, className) => {
 }
 
 const generateResponse = (chatElement, userMessage) => {
-    const API_URL = "http://localhost:5000/sendMessage"; // Update the URL to match your Flask server endpoint
+    const API_URL = "http://localhost:5000/sendMessage"; 
     const messageElement = chatElement.querySelector("p");
-    const tagsElement = document.getElementById("tags");
-
-    // const userMessage = chatElement.querySelector("p").textContent; // Get user's message from chat element
 
     // Define the data to be sent in the AJAX request
     const requestData = {
@@ -44,8 +40,6 @@ const generateResponse = (chatElement, userMessage) => {
         .then(response => response.json())
         .then(data => {
             messageElement.textContent = data.message;
-            // const tags = data.tags.join(", ");
-            // tagsElement.textContent = tags;
         })
         .catch(error => {
             console.error('Error:', error);
@@ -57,7 +51,7 @@ const generateResponse = (chatElement, userMessage) => {
 
 
 const handleChat = () => {
-    userMessage = chatInput.value.trim(); // Get user entered message and remove extra whitespace
+    userMessage = chatInput.value.trim(); 
     if(!userMessage) return;
 
     // Clear the input textarea and set its height to default
