@@ -7,8 +7,8 @@ app = Flask(__name__)
 CORS(app, origins=['*'])
 CORS(app, allow_headers=['Content-Type', 'Authorization'])
 
-#  MySQL database
-conn = mysql.connector.connect(host= "localhost", user="root", passwd="sahil11", db="p1")
+# MySQL database
+conn = mysql.connector.connect(host="localhost", user="root", passwd="sahil11", db="p1")
 
 @app.route('/sendMessage', methods=['POST'])
 def send_message():
@@ -16,6 +16,7 @@ def send_message():
     data = request.get_json()
     message = data['message']
     print(message)
+    
     # Database operations
     cursor = conn.cursor()
     cursor.execute("SELECT ans FROM chat_responses WHERE ques = %s", (message,))
@@ -25,6 +26,11 @@ def send_message():
         response = result[0]
     else:
         response = "Please email admission@iit.edu for assistance."
+        insert_cursor = conn.cursor()
+        insert_query = "INSERT INTO unanswered (ques) VALUES (%s)"
+        insert_cursor.execute(insert_query, (message,))
+        conn.commit()
+        insert_cursor.close()
     
     # Close cursor
     cursor.close()
