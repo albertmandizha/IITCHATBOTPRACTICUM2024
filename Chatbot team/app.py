@@ -15,13 +15,11 @@ def send_message():
     # Retrieve message from request
     data = request.get_json()
     message = data['message']
-    print(message)
     
     # Database operations
     cursor = conn.cursor()
     cursor.execute("SELECT ans FROM chat_responses WHERE ques = %s", (message,))
     result = cursor.fetchone()
-    print(result)
     if result:
         response = result[0]
     else:
