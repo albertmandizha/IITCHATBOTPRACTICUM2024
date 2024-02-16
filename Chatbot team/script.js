@@ -17,13 +17,14 @@ const createChatLi = (message, className) => {
     return chatLi; // return chat <li> element
 }
 
-const generateResponse = (chatElement, userMessage) => {
+const generateResponse = (chatElement, userMessage, action) => {
     const API_URL = "http://localhost:5000/sendMessage"; 
     const messageElement = chatElement.querySelector("p");
 
     // Define the data to be sent in the AJAX request
     const requestData = {
-        message: userMessage
+        message: userMessage,
+        action : action
     };
 
     // Define the AJAX request options
@@ -67,7 +68,7 @@ const handleChat = () => {
         const incomingChatLi = createChatLi("Thinking...", "incoming");
         chatbox.appendChild(incomingChatLi);
         chatbox.scrollTo(0, chatbox.scrollHeight);
-        generateResponse(incomingChatLi, userMessage);
+        generateResponse(incomingChatLi, userMessage, null);
     }, 600);
 }
 
@@ -88,3 +89,34 @@ chatInput.addEventListener("keydown", (e) => {
 sendChatBtn.addEventListener("click", handleChat);
 closeBtn.addEventListener("click", () => document.body.classList.remove("show-chatbot"));
 chatbotToggler.addEventListener("click", () => document.body.classList.toggle("show-chatbot"));
+
+
+const feesButton = document.querySelector("#fees");
+const grantsButton = document.querySelector("#grant");
+const admissionButton = document.querySelector("#addmission");
+const policyButton = document.querySelector("#Policies");
+const scolarButton = document.querySelector("#Scholarships");
+
+feesButton.addEventListener("click", () => handleActionButton("Fees"));
+grantsButton.addEventListener("click", () => handleActionButton("Grants"));
+admissionButton.addEventListener("click", () => handleActionButton("Admission"));
+policyButton.addEventListener("click", () => handleActionButton("Policies"));
+scolarButton.addEventListener("click", () => handleActionButton("Scholarships"));
+
+const handleActionButton = (action) => {
+    // Clear the input textarea and set its height to default
+    chatInput.value = "";
+    chatInput.style.height = `${inputInitHeight}px`;
+
+    // Append the user's action to the chatbox
+    chatbox.appendChild(createChatLi(action, "outgoing"));
+    chatbox.scrollTo(0, chatbox.scrollHeight);
+    
+    setTimeout(() => {
+        // Display "Thinking..." message while waiting for the response
+        const incomingChatLi = createChatLi("Thinking...", "incoming");
+        chatbox.appendChild(incomingChatLi);
+        chatbox.scrollTo(0, chatbox.scrollHeight);
+        generateResponse(incomingChatLi,null, action); // Pass the action as userMessage
+    }, 600);
+}
