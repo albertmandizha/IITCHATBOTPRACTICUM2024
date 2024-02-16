@@ -31,29 +31,27 @@ def send_message():
             insert_cursor.execute(insert_query, (message,))
             conn.commit()
             insert_cursor.close()
+        time.sleep(1)
+        return jsonify({'message': response})
 
     else:
         # Handle action query
-        message = data.get('action')
+        action = data.get('action')
         cursor = conn.cursor()
-        cursor.execute("SELECT ques, ans FROM chat_responses WHERE tag = %s LIMIT 3", (message,))
+        cursor.execute("SELECT ques, ans FROM chat_responses WHERE tag = %s LIMIT 3", (action,))
         result = cursor.fetchall()
-        response_pairs = []
-        for row in result:
-            question, answer = row  # Extracting 'ques' and 'ans' from each row
-            response_pairs.append({'question': question, 'answer': answer})  # Appending pairs to list
-        print(response_pairs)
         cursor.close()
 
         if result:
-            response = [item[0] for item in result]
+            # Construct a list of dictionaries containing questions and answers
+            response = [{'question': row[0]} for row in result]
             print(response)
         else:
-            response = ["Please email admission111@iit.edu for assistance."]  # Ensure response is a list
+            # If no results found, provide a default response
+            response = [{'question': "Please email admission111@iit.edu for assistance."}]
 
-    time.sleep(1)
-    return jsonify({'message': response})
-
+        time.sleep(1)
+        return jsonify({'actions': response})
 
 if __name__ == '__main__':
     app.run(debug=True)

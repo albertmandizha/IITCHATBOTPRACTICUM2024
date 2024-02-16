@@ -21,6 +21,9 @@ const generateResponse = (chatElement, userMessage, action) => {
     const API_URL = "http://localhost:5000/sendMessage"; 
     const messageElement = chatElement.querySelector("p");
 
+    // Clear any previous content in the message element
+    messageElement.textContent = "";
+
     // Define the data to be sent in the AJAX request
     const requestData = {
         message: userMessage,
@@ -40,7 +43,19 @@ const generateResponse = (chatElement, userMessage, action) => {
     fetch(API_URL, requestOptions)
         .then(response => response.json())
         .then(data => {
-            messageElement.textContent = data.message;
+            if (data.actions) {
+                // If actions are received, create buttons for each question
+                data.actions.forEach(action => {
+                    const button = document.createElement("button");
+                    button.textContent = action.question;
+                    button.classList.add("action-button");
+                    button.addEventListener("click", () => handlesubActionButton(action.question));
+                    messageElement.appendChild(button);
+                });
+            } else {
+                // If regular message received, display it
+                messageElement.textContent = data.message;
+            }
         })
         .catch(error => {
             console.error('Error:', error);
@@ -48,7 +63,8 @@ const generateResponse = (chatElement, userMessage, action) => {
             messageElement.textContent = "Oops! Something went wrong. Please try again.";
         })
         .finally(() => chatbox.scrollTo(0, chatbox.scrollHeight));
-}
+};
+
 
 
 const handleChat = () => {
@@ -120,3 +136,20 @@ const handleActionButton = (action) => {
         generateResponse(incomingChatLi,null, action); // Pass the action as userMessage
     }, 600);
 }
+const handlesubActionButton = (action) => {
+    // Clear the input textarea and set its height to default
+    chatInput.value = "";
+    chatInput.style.height = `${inputInitHeight}px`;
+
+    // Append the clicked question to the chatbox
+    chatbox.appendChild(createChatLi(action, "outgoing"));
+    chatbox.scrollTo(0, chatbox.scrollHeight);
+    
+    setTimeout(() => {
+        const incomingChatLi = createChatLi("Thinking...", "incoming");
+        chatbox.appendChild(incomingChatLi);
+        chatbox.scrollTo(0, chatbox.scrollHeight);
+        generateResponse(incomingChatLi, action, null); 
+    }, 600);
+};
+
