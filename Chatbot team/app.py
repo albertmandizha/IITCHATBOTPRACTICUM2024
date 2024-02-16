@@ -12,15 +12,16 @@ conn = mysql.connector.connect(host="localhost", user="root", passwd="sahil11", 
 
 @app.route('/sendMessage', methods=['POST'])
 def send_message():
-    # Retrieve message from request
-    if():
-        data = request.get_json()
-        message = data['message']
-        
-        # Database operations
+    data = request.get_json()
+    message = data.get('message')  # Use .get() to safely retrieve message, it returns None if not found
+    
+    if message:
+        # Handle regular message query
         cursor = conn.cursor()
         cursor.execute("SELECT ans FROM chat_responses WHERE ques = %s", (message,))
         result = cursor.fetchone()
+        cursor.close()
+
         if result:
             response = result[0]
         else:
@@ -30,27 +31,29 @@ def send_message():
             insert_cursor.execute(insert_query, (message,))
             conn.commit()
             insert_cursor.close()
-        
-        # Close cursor
-        cursor.close()
-        time.sleep(1)
-        return jsonify({'message': response})
+
     else:
-        data = request.get_json()
-        message = data['action']
-        
-        # Database operations
+        # Handle action query
+        message = data.get('action')
         cursor = conn.cursor()
-        cursor.execute("SELECT ques FROM chat_responses WHERE tag = %s LIMIT 3", (message,))
+        cursor.execute("SELECT ques, ans FROM chat_responses WHERE tag = %s LIMIT 3", (message,))
         result = cursor.fetchall()
-        if result:
-            response = result
-        else:
-            response = "Please email admission111@iit.edu for assistance."
-        # Close cursor
+        response_pairs = []
+        for row in result:
+            question, answer = row  # Extracting 'ques' and 'ans' from each row
+            response_pairs.append({'question': question, 'answer': answer})  # Appending pairs to list
+        print(response_pairs)
         cursor.close()
-        time.sleep(1)
-        return jsonify({'message': response})
+
+        if result:
+            response = [item[0] for item in result]
+            print(response)
+        else:
+            response = ["Please email admission111@iit.edu for assistance."]  # Ensure response is a list
+
+    time.sleep(1)
+    return jsonify({'message': response})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
