@@ -2,6 +2,7 @@ import mysql.connector
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import time
+from collections import Counter
 
 app = Flask(__name__)
 CORS(app, origins=['*'])
@@ -52,6 +53,23 @@ def send_message():
 
         time.sleep(1)
         return jsonify({'actions': response})
+    
+
+@app.route('/getTopActions', methods=['GET'])
+def get_top_actions():
+    cursor = conn.cursor()
+    cursor.execute("SELECT tag FROM chat_responses")
+    tags = [row[0] for row in cursor.fetchall()]
+    cursor.close()
+
+    if tags:
+        top_actions = Counter(tags).most_common(5)
+        response = [{'action': action} for action, count in top_actions]
+    else:
+        response = [{'action': 'Fees'}, {'action': 'Grants'}, {'action': 'Admission'}, {'action': 'Policies'}, {'action': 'Scholarships'}]
+
+    return jsonify({'actions': response})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
