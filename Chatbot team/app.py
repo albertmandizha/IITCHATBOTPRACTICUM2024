@@ -14,25 +14,38 @@ conn = mysql.connector.connect(host="localhost", user="root", passwd="sahil11", 
 def send_message():
     data = request.get_json()
     message = data.get('message')  # Use .get() to safely retrieve message, it returns None if not found
-    
+
     if message:
         # Handle regular message query
         cursor = conn.cursor()
-        cursor.execute("SELECT answer_text FROM answers a JOIN questions q ON a.question_id = q.question_id WHERE q.question_text = %s", (message,))
+        cursor.execute("""
+            SELECT a.answer_text, GROUP_CONCAT(o.option_text) AS options
+            FROM answers a
+            JOIN questions q ON a.question_id = q.question_id
+            LEFT JOIN options o ON a.answer_id = o.answer_id
+            WHERE q.question_text = %s
+            GROUP BY a.answer_id
+        """, (message,))
         result = cursor.fetchone()
         cursor.close()
 
         if result:
-            response = result[0]
+            response = {
+                'answer': result[0],
+                'options': result[1].split(',') if result[1] else []
+            }
         else:
-            response = "Please email admission@iit.edu for assistance."
+            response = {
+                'answer': "Please email admission@iit.edu for assistance.",
+                'options': []
+            }
             insert_cursor = conn.cursor()
             insert_query = "INSERT INTO questions (question_text) VALUES (%s)"
             insert_cursor.execute(insert_query, (message,))
             conn.commit()
             insert_cursor.close()
         time.sleep(1)
-        return jsonify({'message': response})
+        return jsonify(response)
 
     else:
         # Handle action query

@@ -26,6 +26,10 @@ const generateResponse = (chatElement, userMessage, action) => {
 
   // Clear any previous content in the message element
   messageElement.textContent = "";
+  const optionsContainer = chatElement.querySelector(".options-container");
+  if (optionsContainer) {
+    optionsContainer.remove();
+  }
 
   // Define the data to be sent in the AJAX request
   const requestData = {
@@ -58,8 +62,20 @@ const generateResponse = (chatElement, userMessage, action) => {
           messageElement.appendChild(button);
         });
       } else {
-        // If regular message received, display it
-        messageElement.textContent = data.message;
+        // If regular message received, display answer and options
+        messageElement.textContent = data.answer;
+
+        if (data.options.length > 0) {
+          const optionsContainer = document.createElement("div");
+          optionsContainer.classList.add("options-container");
+          data.options.forEach((option) => {
+            const optionButton = document.createElement("button");
+            optionButton.textContent = option;
+            optionButton.classList.add("option-button");
+            optionsContainer.appendChild(optionButton);
+          });
+          chatElement.appendChild(optionsContainer);
+        }
       }
     })
     .catch((error) => {
