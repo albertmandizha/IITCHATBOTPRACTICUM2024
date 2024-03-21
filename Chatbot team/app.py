@@ -98,22 +98,6 @@ def send_message():
         time.sleep(1)
         return jsonify(response)
 
-@app.route('/getTopQuestions', methods=['POST'])
-def get_top_questions():
-    data = request.get_json()
-    tag_name = data.get('tag_name')
-    cursor = conn.cursor()
-    cursor.execute("SELECT q.question_text FROM questions q JOIN question_tags qt ON q.question_id = qt.question_id JOIN tags t ON qt.tag_id = t.tag_id WHERE t.tag_name = %s LIMIT 3", (tag_name,))
-    questions = [row[0] for row in cursor.fetchall()]
-    cursor.close()
-
-    if questions:
-        response = {'questions': questions}
-    else:
-        response = {'message': 'No questions found for this tag.'}
-
-    return jsonify(response)
-
 @app.route('/getTopActions', methods=['GET'])
 def get_top_actions():
     cursor = conn.cursor()
