@@ -62,6 +62,7 @@ const generateResponse = (chatElement, userMessage, action) => {
               const optionButton = document.createElement("button");
               optionButton.textContent = option;
               optionButton.classList.add("option-button");
+              optionButton.addEventListener("click", () => handleOptionClick(option.answer));
               optionsContainer.appendChild(optionButton);
             });
             messageElement.appendChild(optionsContainer);
@@ -74,7 +75,7 @@ const generateResponse = (chatElement, userMessage, action) => {
           const optionButton = document.createElement("button");
           optionButton.textContent = option.option;
           optionButton.classList.add("option-button");
-          optionButton.addEventListener("click", () => handleOptionClick(option.answer));
+          optionButton.addEventListener("click", () => handleSubActionButton(option.option));
           optionsContainer.appendChild(optionButton);
         });
         messageElement.appendChild(optionsContainer);
