@@ -2,6 +2,9 @@ import mysql.connector
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import time
+from sentence_transformers import SentenceTransformer
+import torch
+import numpy as np
 
 app = Flask(__name__)
 CORS(app, origins=['*'])
@@ -10,40 +13,65 @@ CORS(app, allow_headers=['Content-Type', 'Authorization'])
 # MySQL database
 conn = mysql.connector.connect(host="localhost", user="root", passwd="sahil11", db="pj")
 
+# Load the SentenceTransformer model
+model_name = 'all-MiniLM-L6-v2'
+model = SentenceTransformer(model_name)
+
 @app.route('/sendMessage', methods=['POST'])
 def send_message():
     data = request.get_json()
-    message = data.get('message')  # Use .get() to safely retrieve message, it returns None if not found
+    user_question = data.get('message')  # Use .get() to safely retrieve message, it returns None if not found
 
-    if message:
-        # Handle regular message query
+    if user_question:
+        # Get question vectors from the database
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT a.answer_text, GROUP_CONCAT(o.option_text) AS options
-            FROM answers a
-            JOIN questions q ON a.question_id = q.question_id
-            LEFT JOIN options o ON a.answer_id = o.answer_id
-            WHERE q.question_text = %s
-            GROUP BY a.answer_id
-        """, (message,))
-        result = cursor.fetchone()
+        cursor.execute("SELECT question_id, vector FROM vectors")
+        question_vectors = cursor.fetchall()
         cursor.close()
 
-        if result:
-            response = {
-                'answer': result[0],
-                'options': result[1].split(',') if result[1] else []
-            }
+        # Convert question vectors to tensor format
+        question_ids = [row[0] for row in question_vectors]
+        embeddings = [torch.tensor(eval(row[1])) for row in question_vectors]
+        question_embeddings = torch.stack(embeddings)
+
+        # Encode user question and find top matches
+        user_question_embedding = model.encode([user_question])[0]
+        user_question_embedding = torch.tensor(user_question_embedding).unsqueeze(0)
+        cosine_similarities = torch.nn.functional.cosine_similarity(user_question_embedding, question_embeddings, dim=1).numpy()
+        top_matches_indices = np.argsort(cosine_similarities)[-3:][::-1]
+
+        # Get top matching questions and their answers
+        top_matches = []
+        for idx in top_matches_indices:
+            if cosine_similarities[idx] >= 0.8:
+                question_id = question_ids[idx]
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT q.question_text, a.answer_text, GROUP_CONCAT(o.option_text) AS options
+                    FROM questions q
+                    JOIN answers a ON q.question_id = a.question_id
+                    LEFT JOIN options o ON a.answer_id = o.answer_id
+                    WHERE q.question_id = %s
+                    GROUP BY a.answer_id
+                """, (question_id,))
+                result = cursor.fetchone()
+                cursor.close()
+
+                if result:
+                    top_matches.append({
+                        'question': result[0],
+                        'answer': result[1],
+                        'options': result[2].split(',') if result[2] else []
+                    })
+
+        if top_matches:
+            response = {'matches': top_matches}
         else:
             response = {
                 'answer': "Please email admission@iit.edu for assistance.",
                 'options': []
             }
-            insert_cursor = conn.cursor()
-            insert_query = "INSERT INTO questions (question_text) VALUES (%s)"
-            insert_cursor.execute(insert_query, (message,))
-            conn.commit()
-            insert_cursor.close()
+
         time.sleep(1)
         return jsonify(response)
 
@@ -56,15 +84,19 @@ def send_message():
         cursor.close()
 
         if result:
-            # Construct a list of dictionaries containing questions and answers
-            response = [{'question': row[0], 'answer': row[1]} for row in result]
+            options = []
+            for row in result:
+                options.append({
+                    'option': row[0],
+                    'answer': row[1]
+                })
+            response = {'options': options}
         else:
             # If no results found, provide a default response
-            response = [{'question': "Please email admission@iit.edu for assistance.", 'answer': ""}]
+            response = {'answer': "Please email admission@iit.edu for assistance."}
 
         time.sleep(1)
-        return jsonify({'actions': response})
-    
+        return jsonify(response)
 
 @app.route('/getTopActions', methods=['GET'])
 def get_top_actions():

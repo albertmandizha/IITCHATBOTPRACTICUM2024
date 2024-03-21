@@ -50,32 +50,37 @@ const generateResponse = (chatElement, userMessage, action) => {
   fetch(API_URL, requestOptions)
     .then((response) => response.json())
     .then((data) => {
-      if (data.actions) {
-        // If actions are received, create buttons for each question
-        data.actions.forEach((action) => {
-          const button = document.createElement("button");
-          button.textContent = action.question;
-          button.classList.add("action-button");
-          button.addEventListener("click", () =>
-            handleSubActionButton(action.question)
-          );
-          messageElement.appendChild(button);
-        });
-      } else {
+      if (data.matches) {
         // If regular message received, display answer and options
-        messageElement.textContent = data.answer;
+        data.matches.forEach((match) => {
+          messageElement.innerHTML += `<p>${match.answer}</p>`;
 
-        if (data.options.length > 0) {
-          const optionsContainer = document.createElement("div");
-          optionsContainer.classList.add("options-container");
-          data.options.forEach((option) => {
-            const optionButton = document.createElement("button");
-            optionButton.textContent = option;
-            optionButton.classList.add("option-button");
-            optionsContainer.appendChild(optionButton);
-          });
-          chatElement.appendChild(optionsContainer);
-        }
+          if (match.options.length > 0) {
+            const optionsContainer = document.createElement("div");
+            optionsContainer.classList.add("options-container");
+            match.options.forEach((option) => {
+              const optionButton = document.createElement("button");
+              optionButton.textContent = option;
+              optionButton.classList.add("option-button");
+              optionsContainer.appendChild(optionButton);
+            });
+            messageElement.appendChild(optionsContainer);
+          }
+        });
+      } else if (data.options) {
+        const optionsContainer = document.createElement("div");
+        optionsContainer.classList.add("options-container");
+        data.options.forEach((option) => {
+          const optionButton = document.createElement("button");
+          optionButton.textContent = option.option;
+          optionButton.classList.add("option-button");
+          optionButton.addEventListener("click", () => handleOptionClick(option.answer));
+          optionsContainer.appendChild(optionButton);
+        });
+        messageElement.appendChild(optionsContainer);
+      } else {
+        // If no matches or options found, display the default message
+        messageElement.textContent = data.answer;
       }
     })
     .catch((error) => {
@@ -84,6 +89,12 @@ const generateResponse = (chatElement, userMessage, action) => {
       messageElement.textContent = "Oops! Something went wrong. Please try again.";
     })
     .finally(() => (chatbox.scrollTo(0, chatbox.scrollHeight)));
+};
+
+const handleOptionClick = (answer) => {
+  const incomingChatLi = createChatLi(answer, "incoming");
+  chatbox.appendChild(incomingChatLi);
+  chatbox.scrollTo(0, chatbox.scrollHeight);
 };
 
 const handleChat = () => {
