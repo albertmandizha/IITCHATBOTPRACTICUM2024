@@ -25,15 +25,25 @@ def parse_csv(file_content):
     parsed_data = []
     rows = csv.reader(file_content.splitlines())
     header = next(rows)  # Get the header row
-    if header != ['question', 'answer', 'option', 'tags']:
-        return False, "Invalid CSV format. Header must contain: 'question', 'answer', 'option', 'tags'"
+    if header != ['question', 'answer', 'options', 'tags']:
+        return False, "Invalid CSV format. Header must contain: 'question', 'answer', 'options', 'tags'"
     for row in rows:
         if len(row) != 4:
             return False, "File does not have the expected number of columns"
-        question, answer, options, tags = row
-        option_list = [option.strip() for option in options.split(';')]
+        question, answer, options_str, tags = row
+        option_list = []
+        option_answers = []
+        for option in options_str.split(';'):
+            option_parts = option.strip().split(':', 1)
+            if len(option_parts) == 2:
+                option_text, option_answer = option_parts
+                option_list.append(option_text.strip())
+                option_answers.append(option_answer.strip())
+            else:
+                option_list.append(option_parts[0].strip())
+                option_answers.append(None)
         tag_list = [tag.strip() for tag in tags.split(';')]
-        parsed_data.append((question.strip(), answer.strip(), option_list, tag_list))
+        parsed_data.append((question.strip(), answer.strip(), option_list, option_answers, tag_list))
     return True, parsed_data
 
 def parse_txt(file_content):
@@ -42,23 +52,32 @@ def parse_txt(file_content):
     temp_question = None
     temp_answer = None
     temp_options = []
+    temp_option_answers = []
     temp_tags = []
     for line in lines:
         line = line.strip()
         if line.startswith('question:'):
             if temp_question:
-                parsed_data.append((temp_question, temp_answer, temp_options, temp_tags))
+                parsed_data.append((temp_question, temp_answer, temp_options, temp_option_answers, temp_tags))
                 temp_options = []
+                temp_option_answers = []
                 temp_tags = []
             temp_question = line.replace('question:', '').strip()
         elif line.startswith('answer:'):
             temp_answer = line.replace('answer:', '').strip()
         elif line.startswith('option:'):
-            temp_options.append(line.replace('option:', '').strip())
+            option_parts = line.replace('option:', '').strip().split(':', 1)
+            if len(option_parts) == 2:
+                option_text, option_answer = option_parts
+                temp_options.append(option_text.strip())
+                temp_option_answers.append(option_answer.strip())
+            else:
+                temp_options.append(option_parts[0].strip())
+                temp_option_answers.append(None)
         elif line.startswith('tags:'):
             temp_tags = line.replace('tags:', '').strip().split(',')
     if temp_question:
-        parsed_data.append((temp_question, temp_answer, temp_options, temp_tags))
+        parsed_data.append((temp_question, temp_answer, temp_options, temp_option_answers, temp_tags))
     return True, parsed_data
 
 def encode_and_save_vectors(question_id, question_text):
@@ -79,7 +98,7 @@ def insert_into_database(data):
     cursor = conn.cursor()
     try:
         if data:
-            for question, answer, options, tags in data:
+            for question, answer, options, option_answers, tags in data:
                 # Insert the question
                 insert_question_query = "INSERT INTO questions (question_text) VALUES (%s)"
                 cursor.execute(insert_question_query, (question,))
@@ -93,17 +112,17 @@ def insert_into_database(data):
                 cursor.execute(insert_answer_query, (question_id, answer))
                 answer_id = cursor.lastrowid
 
-                # Insert the options
-                for option_text in options:
-                    insert_option_query = "INSERT INTO options (answer_id, option_text) VALUES (%s, %s)"
-                    cursor.execute(insert_option_query, (answer_id, option_text))
+                # Insert the options and option answers
+                for option_text, option_answer in zip(options, option_answers):
+                    insert_option_query = "INSERT INTO optionsColumns (answer_id, option_text, option_answer) VALUES (%s, %s, %s)"
+                    cursor.execute(insert_option_query, (answer_id, option_text, option_answer))
 
                 # Insert the tags and associate them with the question
                 for tag_name in tags:
                     # Insert or ignore if tag_name already exists
                     insert_tag_query = "INSERT IGNORE INTO tags (tag_name) VALUES (%s)"
                     cursor.execute(insert_tag_query, (tag_name,))
-                    
+
                     # Fetch tag_id regardless of insertion or existence
                     cursor.execute("SELECT tag_id FROM tags WHERE tag_name = %s", (tag_name,))
                     tag_id = cursor.fetchone()[0]
@@ -118,6 +137,7 @@ def insert_into_database(data):
         return False, f"Error inserting data into the database: {str(e)}"
     finally:
         cursor.close()
+        
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
