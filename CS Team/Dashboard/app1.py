@@ -114,7 +114,7 @@ def insert_into_database(data):
 
                 # Insert the options and option answers
                 for option_text, option_answer in zip(options, option_answers):
-                    insert_option_query = "INSERT INTO optionsColumns (answer_id, option_text, option_answer) VALUES (%s, %s, %s)"
+                    insert_option_query = "INSERT INTO options (answer_id, option_text, option_answer) VALUES (%s, %s, %s)"
                     cursor.execute(insert_option_query, (answer_id, option_text, option_answer))
 
                 # Insert the tags and associate them with the question
