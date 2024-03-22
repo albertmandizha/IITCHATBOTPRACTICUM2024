@@ -211,8 +211,12 @@ header h2 {
   background-color: #d50000;
 }
 
-
-
+.tag-box {
+  background-color: #ffffff;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
 
 @media (max-width: 490px) {
   .chatbot-toggler {
@@ -237,4 +241,3 @@ header h2 {
     display: block;
   }
 }
-
