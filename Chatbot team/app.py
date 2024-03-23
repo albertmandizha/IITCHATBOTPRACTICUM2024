@@ -65,11 +65,13 @@ def send_message():
         cursor.close()
 
         if result:
+
             response = {
-                'question': result[0],
                 'answer': result[1],
-                'options': result[2].split(',') if result[2] else []
+                'options': result[2].split(',') if result[2] else [] 
             }
+            print(response)
+
         else:
             response = {
                 'answer': "Please email admission@iit.edu for assistance.",
@@ -81,7 +83,7 @@ def send_message():
         user_question = user_input
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT q.question_text, a.answer_text, GROUP_CONCAT(o.option_text) AS options
+            SELECT q.question_text, a.answer_id, a.answer_text, GROUP_CONCAT(o.option_text) AS options
             FROM questions q
             JOIN answers a ON q.question_id = a.question_id
             LEFT JOIN options o ON a.answer_id = o.answer_id
@@ -94,8 +96,9 @@ def send_message():
         if result:
             response = {
                 'question': result[0],
-                'answer': result[1],
-                'options': result[2].split(',') if result[2] else []
+                'answer_id': result[1],  # Using the answer_id from the result tuple
+                'answer': result[2],
+                'options': result[3].split(',') if result[3] else []
             }
         else:
             response = {
@@ -191,6 +194,37 @@ def client_ans():
 
     time.sleep(1)
     return jsonify(response)
+
+@app.route('/getOptionAnswer', methods=['POST'])
+def get_option_answer():
+    data = request.get_json()
+    answer_id = data.get('answer_id')
+    option_text = data.get('option_text')
+
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT option_answer
+        FROM options
+        WHERE answer_id = %s AND option_text = %s
+    """, (answer_id, option_text))
+    result = cursor.fetchone()
+    cursor.close()
+
+    if result:
+        option_answer = result[0]
+        response = {
+            'answer_id': answer_id,
+            'option_text': option_text,
+            'option_answer': option_answer
+        }
+    else:
+        response = {
+            'answer': "Sorry, we couldn't find the requested option.",
+            'options': []
+        }
+
+    return jsonify(response)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

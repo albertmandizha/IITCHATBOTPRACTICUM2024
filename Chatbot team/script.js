@@ -47,24 +47,24 @@ const generateResponse = (chatElement, userInput, isQuestion) => {
 
   // Send AJAX request to Flask backend
   fetch(API_URL, requestOptions)
-    .then((response) => response.json())
-    .then((data) => {
-      // Render the answer and options
-      messageElement.innerHTML = `<p>${data.answer}</p>`;
+  .then((response) => response.json())
+  .then((data) => {
+    messageElement.innerHTML = `<p>${data.answer}</p>`;
 
-      if (data.options && data.options.length > 0) {
-        const optionsContainer = document.createElement("div");
-        optionsContainer.classList.add("options-container");
-        data.options.forEach((option) => {
-          const optionButton = document.createElement("button");
-          optionButton.textContent = option;
-          optionButton.classList.add("option-button");
-          optionButton.addEventListener("click", () => handleOptionClick(option));
-          optionsContainer.appendChild(optionButton);
-        });
-        messageElement.appendChild(optionsContainer);
-      }
-    })
+    if (data.options && data.options.length > 0) {
+      const optionsContainer = document.createElement("div");
+      optionsContainer.classList.add("options-container");
+      data.options.forEach((option) => {
+        const optionButton = document.createElement("button");
+        optionButton.textContent = option;
+        optionButton.classList.add("option-button");
+        optionButton.dataset.answerId = data.answer_id; // Store the answer_id
+        optionButton.addEventListener("click", () => handleOptionClick(option, data.answer_id));
+        optionsContainer.appendChild(optionButton);
+      });
+      messageElement.appendChild(optionsContainer);
+    }
+  })
     .catch((error) => {
       console.error("Error:", error);
       messageElement.classList.add("error");
@@ -73,18 +73,6 @@ const generateResponse = (chatElement, userInput, isQuestion) => {
     .finally(() => (chatbox.scrollTo(0, chatbox.scrollHeight)));
 };
 
-const handleOptionClick = (option) => {
-  const outgoingChatLi = createChatLi(option, "outgoing");
-  chatbox.appendChild(outgoingChatLi);
-  chatbox.scrollTo(0, chatbox.scrollHeight);
-
-  setTimeout(() => {
-    const incomingChatLi = createChatLi("Thinking...", "incoming");
-    chatbox.appendChild(incomingChatLi);
-    chatbox.scrollTo(0, chatbox.scrollHeight);
-    generateResponse(incomingChatLi, option, true);
-  }, 600);
-};
 
 const handleChat = () => {
   userMessage = chatInput.value.trim();
@@ -181,6 +169,48 @@ const handleQuestionClick = (question) => {
   }, 600);
 };
 
+
+const handleOptionClick = (option, answerId) => {
+  const outgoingChatLi = createChatLi(option, "outgoing");
+  chatbox.appendChild(outgoingChatLi);
+  chatbox.scrollTo(0, chatbox.scrollHeight);
+
+  const API_URL = "http://localhost:5000/getOptionAnswer";
+  const requestData = {
+    answer_id: answerId,
+    option_text: option,
+  };
+  const requestOptions = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestData),
+  };
+
+  fetch(API_URL, requestOptions)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.option_answer) {
+        const incomingChatLi = createChatLi(`${data.option_answer}`, "incoming");
+        chatbox.appendChild(incomingChatLi);
+        chatbox.scrollTo(0, chatbox.scrollHeight);
+      } else {
+        const incomingChatLi = createChatLi(data.answer, "incoming");
+        chatbox.appendChild(incomingChatLi);
+        chatbox.scrollTo(0, chatbox.scrollHeight);
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      const incomingChatLi = createChatLi("Oops! Something went wrong. Please try again.", "incoming");
+      chatbox.appendChild(incomingChatLi);
+      chatbox.scrollTo(0, chatbox.scrollHeight);
+    });
+};
+
+
+
 const handleNoneOfTheAboveClick = () => {
   const outgoingChatLi = createChatLi("None of the Above", "outgoing");
   chatbox.appendChild(outgoingChatLi);
@@ -229,12 +259,13 @@ const generateClientAns = (chatElement, userMessage) => {
         const optionsContainer = document.createElement("div");
         optionsContainer.classList.add("options-container");
         data.options.forEach((option) => {
-          const optionButton = document.createElement("button");
-          optionButton.textContent = option;
-          optionButton.classList.add("option-button");
-          optionButton.addEventListener("click", () => handleOptionClick(option));
-          optionsContainer.appendChild(optionButton);
-        });
+  const optionButton = document.createElement("button");
+  optionButton.textContent = option;
+  optionButton.classList.add("option-button");
+  optionButton.dataset.answerId = data.answer_id; // Store the answer_id
+  optionButton.addEventListener("click", () => handleOptionClick(optionButton));
+  optionsContainer.appendChild(optionButton);
+});
         messageElement.appendChild(optionsContainer);
       }
     })
@@ -355,6 +386,8 @@ const generateTagQuestions = (chatElement, tag) => {
     })
     .finally(() => (chatbox.scrollTo(0, chatbox.scrollHeight)));
 };
+
+
 
 // Call the fetchTopTags function when the page loads
 window.addEventListener("load", fetchTopTags);
