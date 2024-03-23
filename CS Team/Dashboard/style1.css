@@ -9,8 +9,9 @@ body {
 }
 .container {
   background-color: #ffffff;
-  width: 90%;
-  max-width: 34.37em;
+  width: 600px; /* Adjust the width as needed */
+  max-width: 90%; /* Ensure it doesn't exceed 90% of the viewport width */
+  height: 400px; /* Adjust the height as needed */
   position: relative;
   margin: 3.12em auto;
   padding: 3.12em 1.25em;

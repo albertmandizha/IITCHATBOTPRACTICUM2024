@@ -3,21 +3,8 @@ const headerIcon = document.querySelector('.header-icon');
 
 // Event listeners for buttons
 document.getElementById("fileBtn").addEventListener("click", function() {
-  // Define the path to the file upload HTML file
-  var filePath = "/index1.html";
-
-  // Create a popup window with medium size
-  var popupWindow = window.open(filePath, "_blank", "width=600,height=400");
-
-  // Center the popup window on the screen
-  if (window.screen) {
-    var left = (window.screen.width - 600) / 2;
-    var top = (window.screen.height - 400) / 2;
-    popupWindow.moveTo(left, top);
-  }
+  fetchFileUploadContent();
 });
-
-
 
 document.getElementById('chatResponsesBtn').addEventListener('click', () => {
   fetchData('chatResponsesBtn');
@@ -85,11 +72,34 @@ function fetchData(buttonId) {
     });
 }
 
+function fetchFileUploadContent() {
+  const filePath = "/CS Team/Dashboard/index1.html";
+
+  fetch(filePath)
+    .then(response => response.text())
+    .then(data => {
+      const contentDiv = document.createElement('div');
+      contentDiv.innerHTML = data;
+      contentContainer.appendChild(contentDiv);
+
+      const script1 = document.createElement('script');
+      script1.src = '/CS Team/Dashboard/script1.js';
+      document.body.appendChild(script1);
+
+      const style1 = document.createElement('link');
+      style1.rel = 'stylesheet';
+      style1.href = '/CS Team/Dashboard/style1.css';
+      document.head.appendChild(style1);
+    })
+    .catch(error => {
+      console.error('Error fetching file:', error);
+    });
+}
+
 // Event listener for header icon
 headerIcon.addEventListener('click', () => {
   alert('Personal Information and Logout option goes here...');
 });
-
 
 function downloadQATable() {
   const downloadLink = document.createElement('a');

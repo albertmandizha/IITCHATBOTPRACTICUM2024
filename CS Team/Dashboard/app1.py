@@ -148,7 +148,7 @@ def upload_file():
             file_contents[file.filename] = file.read().decode('utf-8')
         else:
             return jsonify({'error': 'Only CSV or TXT files are allowed'}), 400
-    
+
     success = False
     message = None
 
@@ -160,7 +160,7 @@ def upload_file():
         else:
             message = "Unsupported file format. Only CSV or TXT files are allowed"
             break
-        
+
         if success:
             success, message = insert_into_database(parsed_data)
             if not success:
@@ -170,9 +170,11 @@ def upload_file():
             break
 
     if success:
-        return jsonify({'message': message}), 200
+        response_data = {'message': message}
+        return jsonify(response_data), 200
     else:
-        return jsonify({'error': message}), 400
+        response_data = {'error': message}
+        return jsonify(response_data), 400
 
 if __name__ == "__main__":
     app.run(port=5001)
