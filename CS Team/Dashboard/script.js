@@ -7,19 +7,11 @@ document.getElementById("fileBtn").addEventListener("click", function() {
 });
 
 document.getElementById('chatResponsesBtn').addEventListener('click', () => {
-  fetchData('chatResponsesBtn');
-});
-
-document.getElementById('qaTableBtn').addEventListener('click', () => {
-  fetchData('qaTableBtn');
-});
-
-document.getElementById('qaTagsBtn').addEventListener('click', () => {
-  fetchData('qaTagsBtn');
+  fetchData('chatResponsesBtn', 'Question and Answer Details');
 });
 
 document.getElementById('tagTableBtn').addEventListener('click', () => {
-  fetchData('tagTableBtn');
+  fetchData('tagTableBtn', 'Tag Table');
 });
 
 document.getElementById('unansweredBtn').addEventListener('click', () => {
@@ -30,47 +22,41 @@ document.getElementById('chatbotDemoBtn').addEventListener('click', () => {
   contentContainer.innerHTML = '<p>Chatbot Demo content goes here...</p>';
 });
 
-function fetchData(buttonId) {
+
+function fetchData(buttonId, heading) {
   fetch(`http://127.0.0.1:5000/get_data/${buttonId}`)
     .then(response => response.json())
     .then(data => {
-      let tableHTML = '<div class="table-container">';
+      let tableHTML = `<div class="table-container"><h2>${heading}</h2>`;
       tableHTML += '<table cellspacing="0" cellpadding="5" border="1" style="width: 100%;">';
       tableHTML += '<thead><tr>';
-      for (const key of Object.keys(data[0])) {
-        tableHTML += `<th>${key}</th>`;
-      }
+      tableHTML += '<th>Question</th>';
+      tableHTML += '<th>Answer</th>';
+      tableHTML += '<th>Tag</th>';
+      tableHTML += '<th>Option</th>';
       tableHTML += '</tr></thead><tbody>';
 
       for (const row of data) {
         tableHTML += '<tr>';
-        for (const cell of Object.values(row)) {
-          tableHTML += `<td contenteditable="true" style="border: 1px solid #ccc; padding: 5px;">${cell}</td>`;
-        }
+        tableHTML += `<td contenteditable="true" style="border: 1px solid #ccc; padding: 5px;">${row[0] || ''}</td>`;
+        tableHTML += `<td contenteditable="true" style="border: 1px solid #ccc; padding: 5px;">${row[1] || ''}</td>`;
+        tableHTML += `<td contenteditable="true" style="border: 1px solid #ccc; padding: 5px;">${row[2] || ''}</td>`;
+        tableHTML += `<td contenteditable="true" style="border: 1px solid #ccc; padding: 5px;">${row[3] || ''}</td>`;
         tableHTML += '</tr>';
       }
 
-      tableHTML += '</tbody></table>';
-
-      // Add "Download" button for QA Table
-      if (buttonId === 'qaTableBtn') {
-        tableHTML += '<div class="button-container">';
-        tableHTML += '<button id="downloadQATableBtn">Download</button>';
-        tableHTML += '</div>';
-      }
-
-      tableHTML += '</div>';
+      tableHTML += '</tbody></table></div>';
       contentContainer.innerHTML = tableHTML;
-
-      // Add event listener for "Download" button
-      if (buttonId === 'qaTableBtn') {
-        document.getElementById('downloadQATableBtn').addEventListener('click', downloadQATable);
-      }
     })
     .catch(error => {
       console.error('Error fetching data:', error);
     });
 }
+
+// Event listener for header icon
+headerIcon.addEventListener('click', () => {
+  alert('Personal Information and Logout option goes here...');
+});
 
 function fetchFileUploadContent() {
   const filePath = "/CS Team/Dashboard/index1.html";
